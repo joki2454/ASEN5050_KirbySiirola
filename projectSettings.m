@@ -11,8 +11,10 @@
 % Outputs: 
 %   SET - struct of project settings
 function SET = projectSettings()
-%% 
+%% Initialization
+SET = struct;
 
+%% 
 
 
 
