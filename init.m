@@ -2,7 +2,6 @@
 %  Created: 10/26/2018
 % Modified: 10/26/2018
 %
-% bla bla bla
 %
 % Purpose: Execute the code for the ASEN 5050 Project.
 %
