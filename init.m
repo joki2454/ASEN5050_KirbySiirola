@@ -6,9 +6,9 @@
 %
 %% Housekeeping
 close all;clc
-addpath(genpath('subroutines'))  % Subroutines directory
+addpath(genpath('Subroutines'))  % Subroutines directory
 addpath(genpath('mice'))         % MICE (MATLAB SPICE Interface) directory
-addpath(genpath('mice kernels')) % MICE Kernel files directory
+addpath(genpath('micekernels')) % MICE Kernel files directory
 
 %% Initialize MICE (MATLAB SPICE Interface) Kernels
 kernelpath = './mice kernels/Cassini Kernels/'; % directory for Cassini Kernels
