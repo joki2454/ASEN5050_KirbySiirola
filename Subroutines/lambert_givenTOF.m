@@ -1,6 +1,6 @@
 %%  Author: Joshua Kirby
 %  Created: 10/28/18
-% Modified: 10/28/18
+% Modified: 10/30/18
 %
 % Purpose: 
 %
@@ -149,7 +149,7 @@ end
 if isElliptic
   e = sqrt(1-4/c^2*(s-r1)*(s-r2)*sin((alpha(a)+beta(a))/2)^2);
 else % hyperbolic
-  error('Hyperbolic not implemented here, eqn for semi-latus rectum (used to find e) only work for elliptical transfers');
+  e = sqrt(1+4/c^2*(s-r1)*(s-r2)*sinh((alpha(a)+beta(a))/2)^2);
 end
 
 % true anomalies

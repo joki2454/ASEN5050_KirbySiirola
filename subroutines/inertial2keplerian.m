@@ -1,6 +1,6 @@
 %%  Author: Joshua Kirby
 %  Created: 10/28/2018
-% Modified: 10/28/2018
+% Modified: 10/30/2018
 %
 % Purpose: This function will convert an inertial position and velocity
 % vector of a spacecraft into the keplerian orbital elements of that craft
@@ -63,12 +63,12 @@ Y = [0 1 0]';
 Z = [0 0 1]';
 r = norm(R);
 v = norm(V);
-H = cross(R,V);
+H = cross(R,V); % angular momentum vector
 h = norm(H);
-epsilon = v^2/2-mu/r;
-N = cross(Z,H);
+epsilon = v^2/2-mu/r; % specific energy
+N = cross(Z,H); % line of nodes
 n = norm(N);
-E = cross(V,H)/mu-R/r;
+E = cross(V,H)/mu-R/r; % eccentricity vector
 
 %% Orbital elements (with sign checks)
 i     = acosd(H(3)/h);
