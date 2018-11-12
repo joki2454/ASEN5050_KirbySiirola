@@ -24,13 +24,13 @@ function [residual] = SSOI_targeter(R0,V0,mu,TOF,et0,SET)
 et = et0 + TOF; % s
 
 %% Determine Saturn position after TOF
-satstate = mice_spkezr('Saturn',et,'J2000','NONE','Sun');
+satstate = mice_spkezr('Saturn Barycenter',et,'J2000','NONE','Sun');
 Rsat = satstate.state(1:3); % km
 
 %% Determine s/c distance from Saturn
 r = norm(Rsat-R); % km
 
 %% Determine residual distance from Saturn SOI
-residual = r-SET.CONST.SSOI; % km
+residual = abs(r-SET.CONST.SSOI); % km
 
 end

@@ -14,6 +14,10 @@ function SET = projectInitialize()
 %% Initialization
 SET = struct;
 
+%% Filenames
+SET.FILE.DVranging   = 'MAT Files/DeltaV_Ranges.mat';
+SET.FILE.Exploration = 'MAT Files/Exploration.mat';
+
 %% Constants
 % Masses, from App D
 SET.CONST.mE   = 5.9742e24; % kg, earth mass
@@ -34,10 +38,10 @@ Sdate = '01 Jul 2004';
 
 % Sphere of Influence Radii at Proximity Approximate Date
 % Jupiter SOI
-temp = mice_spkezr('Jupiter',cspice_str2et(Jdate),'J2000','NONE','Sun');
+temp = mice_spkezr('Jupiter Barycenter',cspice_str2et(Jdate),'J2000','NONE','Sun');
 SET.CONST.JSOI = (SET.CONST.mJ/SET.CONST.mSun)^(2/5)*norm(temp.state(1:3)); % km
 % Saturn SOI
-temp = mice_spkezr('Saturn',cspice_str2et(Sdate),'J2000','NONE','Sun');
+temp = mice_spkezr('Saturn Barycenter',cspice_str2et(Sdate),'J2000','NONE','Sun');
 SET.CONST.SSOI = (SET.CONST.mS/SET.CONST.mSun)^(2/5)*norm(temp.state(1:3)); % km
 
 % Initial State for Cassini (two days after Earth flyby)
@@ -50,10 +54,10 @@ SET.CASS.TOF_0_JSOI1    = cspice_str2et('12 Nov 2000 15:59:50.117') - cspice_str
 SET.CASS.TOF_JSOI2_SSOI = cspice_str2et('30 Mar 2004 15:40:33.665') - cspice_str2et('19 Feb 2001 22:13:29.865');
 
 %% Saturn SOI Targeter Parameters
-% tolerance within which fsolve will determine how long it takes to reach Saturn's SOI
+% targeter tolerances
 SET.TRGT.tol = 1e-6; % km, found to be best to leave this as the default 1e-6
 
-% Display type
+% Set all targeter display types
 SET.TRGT.displayType = 'final'; % 'none' no fsolve display, 'final' default fsolve display
 
 

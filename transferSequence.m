@@ -14,14 +14,16 @@
 %   TOF_JSOI       - time spent in Jupiter's SOI, s
 %   TOF_JSOI2_SSOI - time spent between Saturn's and Jupiter's SOI, s
 %   TOF_SSOI       - time spent in between Saturn's SOI and perisaturnium, s
-%   fsolve_badness -  0 - all is well
-%                     1 - Solution not found in max iterations of fsolve, this 
-%                         could mean that 1) max iterations is
-%                         too small, 2) there is some problem with the fsolve
-%                         setup, or 3) (purpose of this variable) satellite does 
-%                         not pass through SSOI
+%   VpJ1_jc        - velocity at perijove before a maneuver in a
+%                    Jupiter-centered J2000 frame
+%   optim_badness  - 0 - all is well
+%                    1 - Solution not found in max iterations of fsolve or an error occurred, this 
+%                        could mean that 1) max iterations is
+%                        too small, 2) there is some problem with the fsolve
+%                        setup, or 3) (purpose of this variable) satellite does 
+%                        not pass through SSOI
 %
-function [a_park,i_park,TOF_JSOI,TOF_JSOI2_SSOI,TOF_SSOI,fsolve_badness] = transferSequence(DVpJ,SET)
+function [a_park,i_park,TOF_JSOI,TOF_JSOI2_SSOI,TOF_SSOI,VpJ1_jc,optim_badness] = transferSequence(DVpJ,SET)
 %% Data extraction (heliocentric J2000 initial state)
 R0 = SET.CASS.R0; % km
 V0 = SET.CASS.V0; % km/s
@@ -30,7 +32,7 @@ V0 = SET.CASS.V0; % km/s
 [RJSOI1_hc,VJSOI1_hc] = FGtime(R0,V0,SET.CONST.muSun,SET.CASS.TOF_0_JSOI1);
 
 %% Calculate Jupiter state at t_JSOI1
-jstate_JSOI1 = mice_spkezr('Jupiter',cspice_str2et(SET.CASS.startDate)+SET.CASS.TOF_0_JSOI1,'J2000','NONE','Sun');
+jstate_JSOI1 = mice_spkezr('Jupiter Barycenter',cspice_str2et(SET.CASS.startDate)+SET.CASS.TOF_0_JSOI1,'J2000','NONE','Sun');
 
 %% Calculate spacecraft position and velocity in Jupiter-centered J2000 frame
 RJSOI1_jc = RJSOI1_hc-jstate_JSOI1.state(1:3); % km
@@ -105,7 +107,7 @@ t_tpJSOI2 = sqrt(a^3/SET.CONST.muJ)*(E-e*sin(E));
 TOF_JSOI = t_tpJSOI2-t_tpJSOI1; % s
 
 % Jupiter's state at JSOI2 in heliocentric J2000 frame
-jstate_JSOI2 = mice_spkezr('Jupiter',cspice_str2et(SET.CASS.startDate)+SET.CASS.TOF_0_JSOI1+TOF_JSOI,'J2000','NONE','Sun');
+jstate_JSOI2 = mice_spkezr('Jupiter Barycenter',cspice_str2et(SET.CASS.startDate)+SET.CASS.TOF_0_JSOI1+TOF_JSOI,'J2000','NONE','Sun');
 
 % J2000 heliocentric position and velocity at JSOI2
 RJSOI2_hc = RJSOI2_jc + jstate_JSOI2.state(1:3); % km
@@ -119,16 +121,17 @@ etJSOI2 = cspice_str2et(SET.CASS.startDate) + SET.CASS.TOF_0_JSOI1 + TOF_JSOI; %
 SSOI_targeter_eqn = @(TOF) SSOI_targeter(RJSOI2_hc,VJSOI2_hc,SET.CONST.muSun,TOF,etJSOI2,SET);
 
 % Solve for TOF, using STK (DeltaV=0) TOF from JSOI2 to SSOI as starting point
-options = optimoptions('fsolve','maxiter',50,'FunctionTolerance',SET.TRGT.tol,'OptimalityTolerance',1,'Display',SET.TRGT.displayType);
-[TOF_JSOI2_SSOI,~,exitflag,output] = fsolve(SSOI_targeter_eqn,SET.CASS.TOF_JSOI2_SSOI,options); % s
+%options = optimoptions('fsolve','maxiter',100,'FunctionTolerance',SET.TRGT.tol,'OptimalityTolerance',1,'Display',SET.TRGT.displayType);
+%[TOF_JSOI2_SSOI,~,exitflag,output] = fsolve(SSOI_targeter_eqn,SET.CASS.TOF_JSOI2_SSOI,options); % s
+options = optimset('display','none');
+[TOF_JSOI2_SSOI,~,exitflag,output] = fminsearch(SSOI_targeter_eqn,SET.CASS.TOF_JSOI2_SSOI,options); % s
 
 %% Define result badness
-if ismember(exitflag,1:4)
-  fsolve_badness = 0; % nothing bad
-elseif ismember(exitflag,-3:-1)
-  error('When targeting Saturn SOI fsolve returned an error and could not solve');
-elseif exitflag == 0
-  fsolve_badness = 1; % Solution not found in max iterations of fsolve, this 
+if exitflag == 1
+  optim_badness = 0; % nothing bad
+elseif ismember(exitflag,-1:0)
+  warning('fminsearch produced badness in transferSequence')
+  optim_badness = 1; % Solution not found in max iterations of fsolve, this 
                       % could mean that 1) max iterations is
                       % too small, 2) there is some problem with the fsolve
                       % setup, or 3) (most likely) satellite does not pass
@@ -142,7 +145,7 @@ end
 
 %% Determine SSOI position and velocity in J2000 Saturn-centered frame
 % Saturn state at SSOI
-sstate_SSOI = mice_spkezr('Saturn',etJSOI2+TOF_JSOI2_SSOI,'J2000','NONE','Sun');
+sstate_SSOI = mice_spkezr('Saturn Barycenter',etJSOI2+TOF_JSOI2_SSOI,'J2000','NONE','Sun');
 
 % J2000 saturn-centered position and velocity at SSOI
 RSSOI_sc = RSSOI_hc - sstate_SSOI.state(1:3); % km
@@ -187,7 +190,7 @@ a_park = norm(RpS_sc); % km
 
 %% Calculate DeltaV at perisaturnium required to enter circular parking orbit
 % Determine magnitude of required DeltaV at perisaturnium (in ram direction)
-DvpS = sqrt(SET.CONST.muS/a_parking) - norm(VpS1_sc);
+DvpS = sqrt(SET.CONST.muS/a_park) - norm(VpS1_sc);
 
 % Determine DeltaV vector at perisaturnium in Saturn-centered J2000 frame
 DVpS = DvpS.*VpS1_sc./norm(VpS1_sc); % km/s
