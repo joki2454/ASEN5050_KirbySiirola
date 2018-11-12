@@ -29,10 +29,10 @@ V0 = SET.CASS.V0; % km/s
 %% Use FG Functions to propagate to Jupiter SOI in heliocentric J2000 2BP
 [RJSOI1_hc,VJSOI1_hc] = FGtime(R0,V0,SET.CONST.muSun,SET.CASS.TOF_0_JSOI1);
 
-%% Calculate Jupiter state after at t_JSOI1
+%% Calculate Jupiter state at t_JSOI1
 jstate_JSOI1 = mice_spkezr('Jupiter',cspice_str2et(SET.CASS.startDate)+SET.CASS.TOF_0_JSOI1,'J2000','NONE','Sun');
 
-%% Calculate spacecraft position in Jupiter-centered J2000 frame
+%% Calculate spacecraft position and velocity in Jupiter-centered J2000 frame
 RJSOI1_jc = RJSOI1_hc-jstate_JSOI1.state(1:3); % km
 VJSOI1_jc = VJSOI1_hc-jstate_JSOI1.state(4:6); % km/s
 
@@ -149,8 +149,10 @@ RSSOI_sc = RSSOI_hc - sstate_SSOI.state(1:3); % km
 VSSOI_sc = VSSOI_hc - sstate_SSOI.state(4:6); % km/s
 
 %% Confirm that SSOI position is at Saturn SOI
+% THIS ERROR IS NOW CAPTURED BY RESULT BADNESS (fsolve_badness)
+
 if abs(norm(RSSOI_sc)-SET.CONST.SSOI)/SET.CONST.SSOI*100 > 0.01
-  error('Calculated position is not within 0.01% of the sphere of influence of Saturn')
+  % error('Calculated position is not within 0.01% of the sphere of influence of Saturn')
 end
 
 %% Calculate perisaturnium position and velocity in J2000 frame using Saturn-centered 2BP
@@ -181,7 +183,7 @@ E = TAtoEA(e,nuSSOI);
 t_tpSSOI = sqrt(a^3/SET.CONST.muS)*(E-e*sin(E));
 
 %% Calculate semi-major axis of circular parking orbit
-a_parking = norm(RpS_sc); % km
+a_park = norm(RpS_sc); % km
 
 %% Calculate DeltaV at perisaturnium required to enter circular parking orbit
 % Determine magnitude of required DeltaV at perisaturnium (in ram direction)
@@ -196,7 +198,7 @@ t_tppS = 0; % s
 % Time spent in Saturn's SOI
 TOF_SSOI = t_tppS - t_tpSSOI; % s
 
-%% Deterimine inclination of circular parking orbit
+%% Determine inclination of circular parking orbit
 % Parking orbit velocity at perisaturnium in Saturn-centered frame
 VpS2_sc = VpS1_sc + DVpS; % km/s
 
@@ -204,6 +206,6 @@ VpS2_sc = VpS1_sc + DVpS; % km/s
 h = cross(RpS_sc,VpS2_sc); % km^2/s
 
 % Inclination
-i_parking = acosd(h(3)/norm(h)); % deg
+i_park = acosd(h(3)/norm(h)); % deg
 
 end
