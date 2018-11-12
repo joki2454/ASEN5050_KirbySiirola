@@ -123,7 +123,7 @@ SSOI_targeter_eqn = @(TOF) SSOI_targeter(RJSOI2_hc,VJSOI2_hc,SET.CONST.muSun,TOF
 % Solve for TOF, using STK (DeltaV=0) TOF from JSOI2 to SSOI as starting point
 %options = optimoptions('fsolve','maxiter',100,'FunctionTolerance',SET.TRGT.tol,'OptimalityTolerance',1,'Display',SET.TRGT.displayType);
 %[TOF_JSOI2_SSOI,~,exitflag,output] = fsolve(SSOI_targeter_eqn,SET.CASS.TOF_JSOI2_SSOI,options); % s
-options = optimset('display','none');
+options = optimset('display','final');
 [TOF_JSOI2_SSOI,~,exitflag,output] = fminsearch(SSOI_targeter_eqn,SET.CASS.TOF_JSOI2_SSOI,options); % s
 
 %% Define result badness
@@ -193,7 +193,7 @@ a_park = norm(RpS_sc); % km
 DvpS = sqrt(SET.CONST.muS/a_park) - norm(VpS1_sc);
 
 % Determine DeltaV vector at perisaturnium in Saturn-centered J2000 frame
-DVpS = DvpS.*VpS1_sc./norm(VpS1_sc); % km/s
+DVpS = DvpS.*unitvec(VpS1_sc); % km/s
 
 % Time past periapsis at perisaturnium
 t_tppS = 0; % s

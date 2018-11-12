@@ -16,7 +16,7 @@ SET = struct;
 
 %% Filenames
 SET.FILE.DVranging   = 'MAT Files/DeltaV_Ranges.mat';
-SET.FILE.Exploration = 'MAT Files/Exploration.mat';
+SET.FILE.Vary = 'MAT Files/Exploration.mat';
 
 %% Constants
 % Masses, from App D
@@ -53,14 +53,16 @@ SET.CASS.V0 = temp.state(4:6); % km/s
 SET.CASS.TOF_0_JSOI1    = cspice_str2et('12 Nov 2000 15:59:50.117') - cspice_str2et(SET.CASS.startDate);
 SET.CASS.TOF_JSOI2_SSOI = cspice_str2et('30 Mar 2004 15:40:33.665') - cspice_str2et('19 Feb 2001 22:13:29.865');
 
-%% Saturn SOI Targeter Parameters
+%% Targeter Parameters (JMK kind of messy throughout project right now)
 % targeter tolerances
 SET.TRGT.tol = 1e-6; % km, found to be best to leave this as the default 1e-6
 
 % Set all targeter display types
 SET.TRGT.displayType = 'final'; % 'none' no fsolve display, 'final' default fsolve display
 
-
+%% Presentation Parameters
+% DeltaV number steps over range
+SET.PRESENT.numSteps = 10;
 
 
 

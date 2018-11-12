@@ -3,13 +3,16 @@
 % Modified: 11/05/2018
 %
 % Purpose: Execute the code for the ASEN 5050 Project.
+
+% NOTE: Need to somehow handle hyperbolic arcs out to Saturn, they produce
+% scary imaginary numbers
 %
 %% Functionality Parameters
 runAll = 0;         % - run code for the entire project (necessary at least once 
                     %   if not .mat files have been previously generated and saved)
                     % - this overrides all other functionality parameters
 runRanging = 0;     % run code for determining ranges for DeltaVs applied at perijove
-runExploration = 1; % run code for determining parking orbit SMA and INC for all
+runVary = 1;        % run code for determining parking orbit SMA and INC for all
                     % DeltaVs within determined ranges
 runPresent = 1;     % run code for presenting results graphically
 
@@ -55,12 +58,42 @@ else
   end
 end
 
-%% Explore parking orbit SMA and INC over the range of DeltaVs
-
+%% Explore parking orbit SMA and INC by varying over the range of DeltaVs
+if runVary || runAll
+  [Dv_ramvec,a_park,i_park] = varyDVpJ(nominal.VpJ1_jc,Dv_ramrange,SET);
+  save(SET.FILE.Vary,'Dv_ramvec','a_park','i_park');
+else
+  if isfile(SET.FILE.Vary)
+    load(SET.FILE.Vary);
+  else
+    error('Attempt was made to use saved Vary section results but none exist.  Set runVary to 1 in init.m')
+  end
+end
 
 %% Present Results
-
+presentResults(Dv_ramvec,a_park,i_park);
 
 %% Clear all loaded SPICE kernels
 % NOTE: Comment this line if you wish to use loaded kernels in the command line
 cspice_kclear;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

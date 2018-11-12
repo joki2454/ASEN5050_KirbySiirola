@@ -59,6 +59,6 @@ fdot = -sin(DE)*sqrt(mu*a)/(r0*r);
 gdot = 1-a/r*(1-cos(DE));
 
 %% Solve for V
-V = fdot*R0+gdot*V0; % km/s
+V = fdot*R0+gdot*V0; % km/sz
 
 end
