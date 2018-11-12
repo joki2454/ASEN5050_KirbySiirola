@@ -50,8 +50,11 @@ SET.CASS.TOF_0_JSOI1    = cspice_str2et('12 Nov 2000 15:59:50.117') - cspice_str
 SET.CASS.TOF_JSOI2_SSOI = cspice_str2et('30 Mar 2004 15:40:33.665') - cspice_str2et('19 Feb 2001 22:13:29.865');
 
 %% Saturn SOI Targeter Parameters
-SET.TRGT.tol = 1; % km, tolerance within which fsolve will determine how long it takes to reach Saturn's SOI
+% tolerance within which fsolve will determine how long it takes to reach Saturn's SOI
+SET.TRGT.tol = 1e-6; % km, found to be best to leave this as the default 1e-6
 
+% Display type
+SET.TRGT.displayType = 'final'; % 'none' no fsolve display, 'final' default fsolve display
 
 
 

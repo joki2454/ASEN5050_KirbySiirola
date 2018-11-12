@@ -29,15 +29,19 @@ cspice_furnsh('./mice kernels/Planetary Ephemeris/de432s.bsp'); % planetary kern
 SET = projectInitialize();
 
 %% Define Nominal Orbit (No maneuvers at perijove)
-transferSequence([0 0 0]',SET);
+nominal.DVpJ = [0 0 0]'; % km/s
+[nominal.a_park,nominal.i_park,nominal.TOF_JSOI,nominal.TOF_JSOI2_SSOI,...
+  nominal.TOF_SSOI,nominal.fsolve_badness] = transferSequence(nominal.DVpJ,SET);
 
-%% Explore SMA and I arrival solution space (ignore RAAN? that's what I'm thinking)
+%% Range allowable DeltaVs at Perijove (along ram and anti-ram direction only for now)
+
+
+%% Explore SMA and I arrival solution space
 
 
 %% Present Results
 
 
 %% Clear all loaded SPICE kernels
-% NOTE: Stop before this line if you wish to use loaded kernels in the
-%       command line
+% NOTE: Comment this line if you wish to use loaded kernels in the command line
 %cspice_kclear;

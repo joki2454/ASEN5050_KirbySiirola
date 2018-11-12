@@ -1,14 +1,27 @@
 %%  Author: Joshua Kirby
 %  Created: 11/03/2018
-% Modified: 11/05/2018
+% Modified: 11/11/2018
 %
 % Purpose: 
 %
 % Inputs: 
+%   DVpJ           - DeltaV applied at Perijove, km/s
+%   SET            - struct of settings, initial state, and options
 %
 % Outputs:
+%   a_park         - semi-major axis of final circular parking orbit, km
+%   i_park         - inclination of final circular parking orbit, deg
+%   TOF_JSOI       - time spent in Jupiter's SOI, s
+%   TOF_JSOI2_SSOI - time spent between Saturn's and Jupiter's SOI, s
+%   TOF_SSOI       - time spent in between Saturn's SOI and perisaturnium, s
+%   fsolve_badness -  0 - all is well
+%                     1 - Solution not found in max iterations of fsolve, this 
+%                         could mean that 1) max iterations is
+%                         too small, 2) there is some problem with the fsolve
+%                         setup, or 3) (purpose of this variable) satellite does 
+%                         not pass through SSOI
 %
-function [a_park,i_park,TOF_JSOI,TOF_JSOI2_SSOI] = transferSequence(DVpJ,SET)
+function [a_park,i_park,TOF_JSOI,TOF_JSOI2_SSOI,TOF_SSOI,fsolve_badness] = transferSequence(DVpJ,SET)
 %% Data extraction (heliocentric J2000 initial state)
 R0 = SET.CASS.R0; % km
 V0 = SET.CASS.V0; % km/s
@@ -106,8 +119,23 @@ etJSOI2 = cspice_str2et(SET.CASS.startDate) + SET.CASS.TOF_0_JSOI1 + TOF_JSOI; %
 SSOI_targeter_eqn = @(TOF) SSOI_targeter(RJSOI2_hc,VJSOI2_hc,SET.CONST.muSun,TOF,etJSOI2,SET);
 
 % Solve for TOF, using STK (DeltaV=0) TOF from JSOI2 to SSOI as starting point
-options = optimoptions('fsolve','maxiter',500,'tolfun',SET.TRGT.tol,'Display','none');
-TOF_JSOI2_SSOI = fsolve(SSOI_targeter_eqn,SET.CASS.TOF_JSOI2_SSOI,options); % s
+options = optimoptions('fsolve','maxiter',50,'FunctionTolerance',SET.TRGT.tol,'OptimalityTolerance',1,'Display',SET.TRGT.displayType);
+[TOF_JSOI2_SSOI,~,exitflag,output] = fsolve(SSOI_targeter_eqn,SET.CASS.TOF_JSOI2_SSOI,options); % s
+
+%% Define result badness
+if ismember(exitflag,1:4)
+  fsolve_badness = 0; % nothing bad
+elseif ismember(exitflag,-3:-1)
+  error('When targeting Saturn SOI fsolve returned an error and could not solve');
+elseif exitflag == 0
+  fsolve_badness = 1; % Solution not found in max iterations of fsolve, this 
+                      % could mean that 1) max iterations is
+                      % too small, 2) there is some problem with the fsolve
+                      % setup, or 3) (most likely) satellite does not pass
+                      % through SSOI
+else
+  error('Fsolve has produced an unkown exitflag, scary')
+end
 
 %% Determine SSOI position and velocity in J2000 heliocentric frame
 [RSSOI_hc,VSSOI_hc] = FGtime(RJSOI2_hc,VJSOI2_hc,SET.CONST.muSun,TOF_JSOI2_SSOI);
@@ -117,30 +145,65 @@ TOF_JSOI2_SSOI = fsolve(SSOI_targeter_eqn,SET.CASS.TOF_JSOI2_SSOI,options); % s
 sstate_SSOI = mice_spkezr('Saturn',etJSOI2+TOF_JSOI2_SSOI,'J2000','NONE','Sun');
 
 % J2000 saturn-centered position and velocity at SSOI
-RSSOI_jc = RSSOI_hc - sstate.state(1:3); % km
-VSSOI_jc = VSSOI_hc - sstate.state(4:6); % km/s
+RSSOI_sc = RSSOI_hc - sstate_SSOI.state(1:3); % km
+VSSOI_sc = VSSOI_hc - sstate_SSOI.state(4:6); % km/s
 
-%% 
+%% Confirm that SSOI position is at Saturn SOI
+if abs(norm(RSSOI_sc)-SET.CONST.SSOI)/SET.CONST.SSOI*100 > 0.01
+  error('Calculated position is not within 0.01% of the sphere of influence of Saturn')
+end
 
+%% Calculate perisaturnium position and velocity in J2000 frame using Saturn-centered 2BP
+% orbital elements and angular momentum magnitude at SSOI
+[a,e,i,omega,Omega,nuSSOI,h] = inertial2keplerian(RSSOI_sc,VSSOI_sc,SET.CONST.muS);
+nu = 0; % deg, true anomaly is 0 deg at perisaturnium
 
+% Distance from origin at periapsis
+r = a*(1-e^2)/(1+e*cosd(nu)); % km
 
+% Rotating frame velocity components
+vr = SET.CONST.muS/h*e*sind(nu); % km/s
+vt = SET.CONST.muS/h*(1+e*cosd(nu)); % km/s
 
+% Formulate vectors in rotating frame
+RpS_rth = [r 0 0]'; % km
+VpS_rth = [vr vt 0]'; % km/s
 
+% Rotation from rotating to J2000 frame
+C = Crth2xyz(i,omega,Omega,nu);
 
+% Position and velocity vectors in Saturn-centered J2000 frame
+RpS_sc = C*RpS_rth; % km,   position at perisaturnium
+VpS1_sc = C*VpS_rth; % km/s, velocity at perisaturnium before maneuver
 
+% Time past periapsis at SSOI
+E = TAtoEA(e,nuSSOI);
+t_tpSSOI = sqrt(a^3/SET.CONST.muS)*(E-e*sin(E));
 
+%% Calculate semi-major axis of circular parking orbit
+a_parking = norm(RpS_sc); % km
 
+%% Calculate DeltaV at perisaturnium required to enter circular parking orbit
+% Determine magnitude of required DeltaV at perisaturnium (in ram direction)
+DvpS = sqrt(SET.CONST.muS/a_parking) - norm(VpS1_sc);
 
+% Determine DeltaV vector at perisaturnium in Saturn-centered J2000 frame
+DVpS = DvpS.*VpS1_sc./norm(VpS1_sc); % km/s
 
+% Time past periapsis at perisaturnium
+t_tppS = 0; % s
 
+% Time spent in Saturn's SOI
+TOF_SSOI = t_tppS - t_tpSSOI; % s
 
+%% Deterimine inclination of circular parking orbit
+% Parking orbit velocity at perisaturnium in Saturn-centered frame
+VpS2_sc = VpS1_sc + DVpS; % km/s
 
+% Angular momentum
+h = cross(RpS_sc,VpS2_sc); % km^2/s
 
-
-
-
-
-
-
+% Inclination
+i_parking = acosd(h(3)/norm(h)); % deg
 
 end

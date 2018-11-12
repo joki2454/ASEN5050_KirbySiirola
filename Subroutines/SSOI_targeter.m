@@ -14,7 +14,7 @@
 %   SET  - Struct containing constants and settings
 %
 % Outputs:
-%   r    - total distance from saturn
+%   residual - difference between distance from Saturn and Saturn SOI, km
 %
 function [residual] = SSOI_targeter(R0,V0,mu,TOF,et0,SET)
 %% Solve for position after TOF
@@ -31,25 +31,6 @@ Rsat = satstate.state(1:3); % km
 r = norm(Rsat-R); % km
 
 %% Determine residual distance from Saturn SOI
-residual = abs(r-SET.CONST.SSOI); % km
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+residual = r-SET.CONST.SSOI; % km
 
 end
