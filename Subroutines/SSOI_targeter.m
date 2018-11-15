@@ -18,7 +18,7 @@
 %
 function [residual] = SSOI_targeter(R0,V0,mu,TOF,et0,SET)
 %% Solve for position after TOF
-[R,~] = FGtime(R0,V0,mu,TOF); % km
+[R,~] = FGtime_universal(R0,V0,mu,TOF); % km
 
 %% Determine epoch after TOF
 et = et0 + TOF; % s

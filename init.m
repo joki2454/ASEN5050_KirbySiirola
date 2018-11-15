@@ -1,11 +1,9 @@
 %% Authors: Joshua Kirby and Amanda Siirola
 %  Created: 10/26/2018
-% Modified: 11/05/2018
+% Modified: 11/12/2018
 %
 % Purpose: Execute the code for the ASEN 5050 Project.
 
-% NOTE: Need to somehow handle hyperbolic arcs out to Saturn, they produce
-% scary imaginary numbers
 %
 %% Functionality Parameters
 runAll = 0;         % - run code for the entire project (necessary at least once 
@@ -44,34 +42,40 @@ SET = projectInitialize();
 %% Define Nominal Orbit (No maneuvers at perijove)
 nominal.DVpJ = [0 0 0]'; % km/s
 [nominal.a_park,nominal.i_park,nominal.TOF_JSOI,nominal.TOF_JSOI2_SSOI,...
-  nominal.TOF_SSOI,nominal.VpJ1_jc,nominal.optim_badness] = transferSequence(nominal.DVpJ,SET);
+  nominal.TOF_SSOI,nominal.RpJ_jc,nominal.VpJ1_jc,nominal.optim_badness] =...
+    transferSequence(nominal.DVpJ,SET);
 
 %% Range allowable DeltaVs at Perijove (along ram and anti-ram direction only for now)
 if runRanging || runAll
-  [Dv_ramrange] = DVpJ_ranger(nominal.VpJ1_jc,SET);
-  save(SET.FILE.DVranging,'Dv_ramrange');
+  [inc_range] = I_park_ranger(SET);
+  save(SET.FILE.Iranging,'inc_range');
 else
-  if isfile(SET.FILE.DVranging)
-    load(SET.FILE.DVranging);
+  if isfile(SET.FILE.Iranging)
+    load(SET.FILE.Iranging);
   else
-    error('Attempt was made to use saved DeltaV ranges but none exist.  Set runRanging to 1 in init.m')
+    error('Attempt was made to use saved parking inclination ranges but none exist.  Set runRanging to 1 in init.m')
   end
 end
 
+% Change desired INC range in SET to be the new calculated range
+inc_range = [max([inc_range(1) SET.RANGES.inc(1)]) min([inc_range(2) SET.RANGES.inc(2)])]; % deg
+SET.RANGES.inc = inc_range; % deg
+
+
 %% Explore parking orbit SMA and INC by varying over the range of DeltaVs
 if runVary || runAll
-  [Dv_ramvec,a_park,i_park] = varyDVpJ(nominal.VpJ1_jc,Dv_ramrange,SET);
-  save(SET.FILE.Vary,'Dv_ramvec','a_park','i_park');
+  DVpJ = varyDVpJ(SET);
+  save(SET.FILE.Vary,'DVpJ');
 else
   if isfile(SET.FILE.Vary)
     load(SET.FILE.Vary);
   else
-    error('Attempt was made to use saved Vary section results but none exist.  Set runVary to 1 in init.m')
+    error('Attempt was made to use saved DVpJ''s but none exist.  Set runVary to 1 in init.m')
   end
 end
 
 %% Present Results
-presentResults(Dv_ramvec,a_park,i_park);
+presentResults(DVpJ,SET);
 
 %% Clear all loaded SPICE kernels
 % NOTE: Comment this line if you wish to use loaded kernels in the command line

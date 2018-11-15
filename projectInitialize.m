@@ -15,17 +15,21 @@ function SET = projectInitialize()
 SET = struct;
 
 %% Filenames
-SET.FILE.DVranging   = 'MAT Files/DeltaV_Ranges.mat';
+SET.FILE.Iranging   = 'MAT Files/I_Park_Ranges.mat';
 SET.FILE.Vary = 'MAT Files/Exploration.mat';
 
 %% Constants
-% Masses, from App D
-SET.CONST.mE   = 5.9742e24; % kg, earth mass
-SET.CONST.mJ   = 318*SET.CONST.mE; % kg, jupiter mass
-SET.CONST.mS   = 95.159*SET.CONST.mE; % kg, saturn mass
-SET.CONST.mSun = 332946*SET.CONST.mE; % kg, sun mass
+% Equatorial Radii, from App D of Vallado
+SET.CONST.RS    = 60268.0; % km
+SET.CONST.RJ    = 71492.0; % km
 
-% Gravitational Parameters, from App D
+% Masses, from App D of Vallado
+SET.CONST.mE    = 5.9742e24; % kg, earth mass
+SET.CONST.mJ    = 318*SET.CONST.mE; % kg, jupiter mass
+SET.CONST.mS    = 95.159*SET.CONST.mE; % kg, saturn mass
+SET.CONST.mSun  = 332946*SET.CONST.mE; % kg, sun mass
+
+% Gravitational Parameters, from App D of Vallado
 SET.CONST.muJ   = 1.268e8; % of Jupiter, km^3/s^2
 SET.CONST.muS   = 3.794e7; % of Saturn, km^3/s^2
 SET.CONST.muSun = 1.32712428e11; % of Sun, km^3/s^2
@@ -58,11 +62,16 @@ SET.CASS.TOF_JSOI2_SSOI = cspice_str2et('30 Mar 2004 15:40:33.665') - cspice_str
 SET.TRGT.tol = 1e-6; % km, found to be best to leave this as the default 1e-6
 
 % Set all targeter display types
-SET.TRGT.displayType = 'final'; % 'none' no fsolve display, 'final' default fsolve display
+SET.TRGT.displayType = 'none'; % 'none' no fsolve display, 'final' default fsolve display
+
+%% Solution Space Parameters
+SET.RANGES.sma = [SET.CONST.RS SET.CONST.SSOI/2]; % km;
+SET.RANGES.inc = [0 150]; % deg, min/max allowable, this is not the guaranteed range
+                          %                         see I_park_ranger for why...
 
 %% Presentation Parameters
 % DeltaV number steps over range
-SET.PRESENT.numSteps = 10;
+SET.PRESENT.numSteps = 30;
 
 
 

@@ -1,6 +1,6 @@
 %%  Author: Joshua Kirby
 %  Created: 11/03/2018
-% Modified: 11/11/2018
+% Modified: 11/12/2018
 %
 % Purpose: 
 %
@@ -14,8 +14,12 @@
 %   TOF_JSOI       - time spent in Jupiter's SOI, s
 %   TOF_JSOI2_SSOI - time spent between Saturn's and Jupiter's SOI, s
 %   TOF_SSOI       - time spent in between Saturn's SOI and perisaturnium, s
+%   RpJ_jc         - position at perijove in Jupiter-centered J2000 frame,
+%                    km
 %   VpJ1_jc        - velocity at perijove before a maneuver in a
-%                    Jupiter-centered J2000 frame
+%                    Jupiter-centered J2000 frame, km/s
+%   DVpS           - DeltaV maneuver at perisaturnium in J2000 frame to 
+%                    put spacecraft into a circular parking orbit, km/s
 %   optim_badness  - 0 - all is well
 %                    1 - Solution not found in max iterations of fsolve or an error occurred, this 
 %                        could mean that 1) max iterations is
@@ -23,13 +27,14 @@
 %                        setup, or 3) (purpose of this variable) satellite does 
 %                        not pass through SSOI
 %
-function [a_park,i_park,TOF_JSOI,TOF_JSOI2_SSOI,TOF_SSOI,VpJ1_jc,optim_badness] = transferSequence(DVpJ,SET)
+function [a_park,i_park,TOF_JSOI,TOF_JSOI2_SSOI,TOF_SSOI,...
+    RpJ_jc,VpJ1_jc,DVpS,optim_badness] = transferSequence(DVpJ,SET)
 %% Data extraction (heliocentric J2000 initial state)
 R0 = SET.CASS.R0; % km
 V0 = SET.CASS.V0; % km/s
 
 %% Use FG Functions to propagate to Jupiter SOI in heliocentric J2000 2BP
-[RJSOI1_hc,VJSOI1_hc] = FGtime(R0,V0,SET.CONST.muSun,SET.CASS.TOF_0_JSOI1);
+[RJSOI1_hc,VJSOI1_hc] = FGtime_universal(R0,V0,SET.CONST.muSun,SET.CASS.TOF_0_JSOI1);
 
 %% Calculate Jupiter state at t_JSOI1
 jstate_JSOI1 = mice_spkezr('Jupiter Barycenter',cspice_str2et(SET.CASS.startDate)+SET.CASS.TOF_0_JSOI1,'J2000','NONE','Sun');
@@ -121,27 +126,25 @@ etJSOI2 = cspice_str2et(SET.CASS.startDate) + SET.CASS.TOF_0_JSOI1 + TOF_JSOI; %
 SSOI_targeter_eqn = @(TOF) SSOI_targeter(RJSOI2_hc,VJSOI2_hc,SET.CONST.muSun,TOF,etJSOI2,SET);
 
 % Solve for TOF, using STK (DeltaV=0) TOF from JSOI2 to SSOI as starting point
-%options = optimoptions('fsolve','maxiter',100,'FunctionTolerance',SET.TRGT.tol,'OptimalityTolerance',1,'Display',SET.TRGT.displayType);
-%[TOF_JSOI2_SSOI,~,exitflag,output] = fsolve(SSOI_targeter_eqn,SET.CASS.TOF_JSOI2_SSOI,options); % s
-options = optimset('display','final');
-[TOF_JSOI2_SSOI,~,exitflag,output] = fminsearch(SSOI_targeter_eqn,SET.CASS.TOF_JSOI2_SSOI,options); % s
+options = optimset('TolFun',1e-04,'display','none');
+[TOF_JSOI2_SSOI,fval,exitflag,~] = fminsearch(SSOI_targeter_eqn,SET.CASS.TOF_JSOI2_SSOI,options); % s
 
+%% Error Checking
+if ismember(exitflag,-1:0)
+  error('fminsearch produced an error')
+end
+  
 %% Define result badness
-if exitflag == 1
-  optim_badness = 0; % nothing bad
-elseif ismember(exitflag,-1:0)
-  warning('fminsearch produced badness in transferSequence')
-  optim_badness = 1; % Solution not found in max iterations of fsolve, this 
-                      % could mean that 1) max iterations is
-                      % too small, 2) there is some problem with the fsolve
-                      % setup, or 3) (most likely) satellite does not pass
-                      % through SSOI
+if fval < sqrt(options.TolFun)
+  optim_badness = 0; % Cassini hit SSOI
+elseif fval > sqrt(options.TolFun)
+  optim_badness = 1; % Cassini never hit SSOI
 else
-  error('Fsolve has produced an unkown exitflag, scary')
+  error('Fminsearch has produced an invalid fval, scary')
 end
 
 %% Determine SSOI position and velocity in J2000 heliocentric frame
-[RSSOI_hc,VSSOI_hc] = FGtime(RJSOI2_hc,VJSOI2_hc,SET.CONST.muSun,TOF_JSOI2_SSOI);
+[RSSOI_hc,VSSOI_hc] = FGtime_universal(RJSOI2_hc,VJSOI2_hc,SET.CONST.muSun,TOF_JSOI2_SSOI);
 
 %% Determine SSOI position and velocity in J2000 Saturn-centered frame
 % Saturn state at SSOI
