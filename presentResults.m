@@ -50,9 +50,6 @@ for i = 1:length(sma)
   end
 end
 
-
-
-
 %% |DeltaV| at perijove
 figure('name','Dv_pJ')
 hold on
@@ -153,7 +150,7 @@ zlabel('RAAN (deg)')
 title('RAAN vs. SMA and INC')
 hold off
 
-%% 3D trajectories
+%% Nominal (DVpJ = 0) heliocentric trajectory
 [~,R_hc,P_EPHEM] = transferStates(nominal.TOF,nominal.T0,nominal.JSOI1,...
   nominal.PJ,nominal.JSOI2,nominal.SSOI,nominal.PS,SET);
 figure('name','3D','units','normalized','position',[0.25 0.125,0.5 0.75])

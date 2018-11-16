@@ -68,7 +68,7 @@ nominal.DVpJ = [0 0 0]'; % km/s
 [nominal.KE_PARK,nominal.TOF,nominal.T0,nominal.JSOI1,nominal.PJ,...
   nominal.JSOI2,nominal.SSOI,nominal.PS,~] = transferSequence(nominal.DVpJ,SET);
 
-%% Range allowable DeltaVs at Perijove (along ram and anti-ram direction only for now)
+%% Range allowable parking orbit inclinations
 if runRanging || runAll
   [inc_range] = I_park_ranger(SET);
   save(SET.FILE.Iranging,'inc_range');
