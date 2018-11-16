@@ -19,6 +19,8 @@ function [] = presentResults(nominal,DVpJ,SET)
 sma = linspace(SET.RANGES.sma(1),SET.RANGES.sma(2),SET.PRESENT.numSteps); % sma
 inc = linspace(SET.RANGES.inc(1),SET.RANGES.inc(2),SET.PRESENT.numSteps); % deg
 [SMA,INC] = meshgrid(sma,inc);
+SMA = SMA';
+INC = INC';
 
 %% Calculate transfer parameters over entire range
 for i = 1:size(DVpJ,1)
@@ -48,40 +50,80 @@ for i = 1:length(sma)
   end
 end
 
+
+
+
 %% |DeltaV| at perijove
 figure('name','Dv_pJ')
 hold on
 grid on
 grid minor
 surf(SMA,INC,Dv_pJ)
+plot3(nominal.KE_PARK.a,nominal.KE_PARK.i,norm(nominal.DVpJ),'r.','markersize',15)
 xlabel('SMA (km)')
 ylabel('INC (deg)')
-zlabel('|\DeltaV|_{perijove} (km/s)')
-title('|\DeltaV|_{pJ} vs. SMA and INC')
+zlabel('|\DeltaV|_{pJ} (km/s)')
+title('|\DeltaV|_{perijove} vs. SMA and INC')
 hold off
 
 %% |DeltaV| at perisaturnium
-figure('name','Dv_pS')
+lims = [min(min(Dv_pS)) Dv_pS(end,end)];
+figure('name','Dv_pS','units','normalized','position',[0.125 0.4 0.75 0.5])
+subplot(1,2,1)
+hold on
+grid on
+grid minor
+surf(SMA,INC,Dv_pS)
+plot3(nominal.KE_PARK.a,nominal.KE_PARK.i,norm(nominal.PS.DV),'r.','markersize',15)
+xlabel('SMA (km)')
+ylabel('INC (deg)')
+zlabel('|\DeltaV|_{pS} (km/s)')
+caxis(lims)
+title('|\DeltaV|_{perisaturnium} vs. SMA and INC')
+hold off
+
+subplot(1,2,2)
 hold on
 grid on
 grid minor
 surf(SMA,INC,Dv_pS)
 xlabel('SMA (km)')
 ylabel('INC (deg)')
-zlabel('|\DeltaV|_{perisaturnium} (km/s)')
-title('|\DeltaV|_{pS} vs. SMA and INC')
+zlabel('|\DeltaV|_{pS} (km/s)')
+plot3(nominal.KE_PARK.a,nominal.KE_PARK.i,norm(nominal.PS.DV),'r.','markersize',15)
+zlim(lims)
+caxis(lims)
+title('Zoomed |\DeltaV|_{perisaturnium} vs. SMA and INC')
 hold off
 
 %% |DeltaV| total
-figure('name','Dv_tot')
+lims = [min(min(Dv_tot)) Dv_tot(end,end)];
+figure('name','Dv_tot','units','normalized','position',[0.125 0.4 0.75 0.5])
+subplot(1,2,1)
 hold on
 grid on
 grid minor
 surf(SMA,INC,Dv_tot)
+plot3(nominal.KE_PARK.a,nominal.KE_PARK.i,norm(nominal.PS.DV),'r.','markersize',15)
 xlabel('SMA (km)')
 ylabel('INC (deg)')
 zlabel('|\DeltaV|_{total} (km/s)')
+caxis(lims)
 title('|\DeltaV|_{tot} vs. SMA and INC')
+hold off
+
+subplot(1,2,2)
+hold on
+grid on
+grid minor
+surf(SMA,INC,Dv_tot)
+plot3(nominal.KE_PARK.a,nominal.KE_PARK.i,norm(nominal.PS.DV),'r.','markersize',15)
+xlabel('SMA (km)')
+ylabel('INC (deg)')
+zlabel('|\DeltaV|_{total} (km/s)')
+zlim(lims)
+caxis(lims)
+title('Zoomed |\DeltaV|_{tot} vs. SMA and INC')
 hold off
 
 %% Sum of squared residuals
@@ -109,6 +151,33 @@ xlabel('SMA (km)')
 ylabel('INC (deg)')
 zlabel('RAAN (deg)')
 title('RAAN vs. SMA and INC')
+hold off
+
+%% 3D trajectories
+[~,R_hc,P_EPHEM] = transferStates(nominal.TOF,nominal.T0,nominal.JSOI1,...
+  nominal.PJ,nominal.JSOI2,nominal.SSOI,nominal.PS,SET);
+figure('name','3D','units','normalized','position',[0.25 0.125,0.5 0.75])
+hold on
+grid on
+grid minor
+% plot jupiter (not to scale)
+plot3(P_EPHEM.RJ_pJ(1),P_EPHEM.RJ_pJ(2),P_EPHEM.RJ_pJ(3),'.','color',[255,165,0]./256,'markersize',10)
+% plot saturn (not to scale)
+plot3(P_EPHEM.RS_pS(1),P_EPHEM.RS_pS(2),P_EPHEM.RS_pS(3),'m.','markersize',10)
+% plot sun (not to scale)
+plot3(0,0,0,'y.','markersize',20)
+% plot trajectory
+c = get(gca,'colororder');
+plot3(R_hc(1,:),R_hc(2,:),R_hc(3,:),'color',c(1,:))
+set(gca,'color',[0 0 0],'gridcolor',[0.9 0.9 0.9],'minorgridcolor',[0.9 0.9 0.9],'gridalpha',0.6,'minorgridalpha',0.6)
+axis equal
+xlabel('x (km)')
+ylabel('y (km)')
+zlabel('z (km)')
+title('Spacecraft Trajectory (|\DeltaV_{perijove}|=0 km/s) in J2000')
+legend('Jupiter','Saturn','Sun','Cassini','location','east')
+h = gca;
+h.Legend.Color = [1 1 1];
 hold off
 
 

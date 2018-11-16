@@ -52,7 +52,10 @@
 %   KE_PARK        - struct of keplerian elements of parking orbit:
 %                    SMA (km), ECC (), INC (deg), AOP (deg), RAAN (deg)
 %   TOF            - struct of various times of flight for transfer:
-%                    JSOI       - time spent in Jupiter SOI, s
+%                    JSOI1_PJ   - time spent between entering Jupiter SOI
+%                                 and Jupiter perijove, s
+%                    PJ_JSOI2   - time spent between Jupiter perijove and exiting
+%                                 Jupiter SOI, s
 %                    JSOI2_SSOI - time spent between Jupiter SOI and
 %                                     Saturn SOI, s
 %                    SSOI       - time spent in Saturn SOI, s
@@ -169,11 +172,12 @@ E = TAtoEA(e,nu);
 t_tpJSOI2 = sqrt(a^3/SET.CONST.muJ)*(E-e*sin(E));
 
 %% Determine JSOI2 position and velocity in J2000 heliocentric frame
-% time spent in Jupiter's sphere of influence
-TOF.JSOI = t_tpJSOI2-t_tpJSOI1; % s
+% TOFs for Jupiter
+TOF.JSOI1_PJ = -t_tpJSOI1; % s
+TOF.PJ_JSOI2 = t_tpJSOI2; % s
 
 % Jupiter's state at JSOI2 in heliocentric J2000 frame
-jstate_JSOI2 = mice_spkezr('Jupiter Barycenter',cspice_str2et(SET.CASS.startDate)+SET.CASS.TOF_0_JSOI1+TOF.JSOI,'J2000','NONE','Sun');
+jstate_JSOI2 = mice_spkezr('Jupiter Barycenter',cspice_str2et(SET.CASS.startDate)+SET.CASS.TOF_0_JSOI1+TOF.JSOI1_PJ+TOF.PJ_JSOI2,'J2000','NONE','Sun');
 
 % J2000 heliocentric position and velocity at JSOI2
 JSOI2.R_hc = JSOI2.R_jc + jstate_JSOI2.state(1:3); % km
@@ -181,7 +185,7 @@ JSOI2.V_hc = JSOI2.V_jc + jstate_JSOI2.state(4:6); % km/s
 
 %% Use targeter to find TOF from JSOI2 to SSOI
 % Epoch at JSOI2
-etJSOI2 = cspice_str2et(SET.CASS.startDate) + SET.CASS.TOF_0_JSOI1 + TOF.JSOI; % s
+etJSOI2 = cspice_str2et(SET.CASS.startDate) + SET.CASS.TOF_0_JSOI1 + TOF.JSOI1_PJ + TOF.PJ_JSOI2; % s
 
 % Formulate targeter equation
 SSOI_targeter_eqn = @(TOF) SSOI_targeter(JSOI2.R_hc,JSOI2.V_hc,SET.CONST.muSun,TOF,etJSOI2,SET);

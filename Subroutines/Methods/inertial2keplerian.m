@@ -95,16 +95,4 @@ switch nusign
     error('Invalid nusign.  Fix this code, it''s broke.');
 end
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+end
