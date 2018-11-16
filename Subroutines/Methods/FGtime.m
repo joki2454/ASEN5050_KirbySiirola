@@ -1,8 +1,10 @@
 %%  Author: Joshua Kirby
 %  Created: 11/05/2018
-% Modified: 11/05/2018
+% Modified: 11/15/2018
 %
-% Purpose:
+% Purpose: This function uses an eccentric anomaly formulation of f and g
+% functions to find the position and velocity along an ellipse in a 2BP
+% given an initial position and velocity and a time of flight.
 %
 % Req'd Routines:
 %   -inertial2keplerian.m
@@ -25,6 +27,11 @@ tol = 1000*eps; % fsolve tolerance for E, rad
 %% Calculate DeltaE
 % Obtain orbital elements
 [a,e,~,~,~,nu0,~] = inertial2keplerian(R0,V0,mu);
+
+% Error check
+if e >= 1
+  error('Attempt was made to use elliptical FG functions on a non-elliptical orbit')
+end
 
 % Calculate intial eccentric anomaly
 E0 = TAtoEA(e,nu0); % rad

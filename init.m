@@ -1,21 +1,45 @@
 %% Authors: Joshua Kirby and Amanda Siirola
 %  Created: 10/26/2018
-% Modified: 11/12/2018
+% Modified: 11/15/2018
 %
 % Purpose: Execute the code for the ASEN 5050 Project.
-
+%
+% Nomenclature:
+%   TOF   - time of flight
+%   SOI   - sphere of influence
+%   CASS  - Cassini
+%   CONST - constant
+%   SMA   - semi-major axis
+%   ECC   - eccentricity
+%   INC   - inclination
+%   AOP   - argument of periapsis
+%   RAAN  - right ascension of the ascending node
+%   nu    - true anomaly
+%   T0    - initial time
+%   JSOI1 - time when spacecraft enter's Jupiter's SOI
+%   PJ    - time when spacecraft is at perijove
+%   JSOI2 - time when spacecraft exit's Jupiter's SOI
+%   SSOI  - time when spacecraft enter's Saturn's SOI
+%   PS    - time when spacecraft is at perisaturnium
+%   KE    - keplerian elements
 %
 %% Functionality Parameters
-runAll = 0;         % - run code for the entire project (necessary at least once 
-                    %   if not .mat files have been previously generated and saved)
+runAll     = 0;     % - run code for the entire project (necessary at least once 
+                    %   if no .mat files have been previously generated and saved)
                     % - this overrides all other functionality parameters
-runRanging = 0;     % run code for determining ranges for DeltaVs applied at perijove
-runVary = 1;        % run code for determining parking orbit SMA and INC for all
-                    % DeltaVs within determined ranges
+                    
+runRanging = 0;     % run code for determining allowable range for inclination
+
+runVary    = 0;     % run code for determining DeltaV at perijove to obtain SMA 
+                    % and INC in desired and determined allowable ranges,
+                    % respectively
+                    
 runPresent = 1;     % run code for presenting results graphically
 
 %% Housekeeping
+% cleanup
 close all;clc
+% add paths
 addpath(genpath('Subroutines'))  % Subroutines directory
 addpath(genpath('mice'))         % MICE (MATLAB SPICE Interface) directory
 addpath(genpath('mice kernels')) % MICE Kernel files directory
@@ -41,9 +65,8 @@ SET = projectInitialize();
 
 %% Define Nominal Orbit (No maneuvers at perijove)
 nominal.DVpJ = [0 0 0]'; % km/s
-[nominal.a_park,nominal.i_park,nominal.TOF_JSOI,nominal.TOF_JSOI2_SSOI,...
-  nominal.TOF_SSOI,nominal.RpJ_jc,nominal.VpJ1_jc,nominal.optim_badness] =...
-    transferSequence(nominal.DVpJ,SET);
+[nominal.KE_PARK,nominal.TOF,nominal.T0,nominal.JSOI1,nominal.PJ,...
+  nominal.JSOI2,nominal.SSOI,nominal.PS,~] = transferSequence(nominal.DVpJ,SET);
 
 %% Range allowable DeltaVs at Perijove (along ram and anti-ram direction only for now)
 if runRanging || runAll
@@ -75,10 +98,10 @@ else
 end
 
 %% Present Results
-presentResults(DVpJ,SET);
+presentResults(nominal,DVpJ,SET);
 
 %% Clear all loaded SPICE kernels
-% NOTE: Comment this line if you wish to use loaded kernels in the command line
+% NOTE: Comment this line if you wish to use loaded MICE kernels in the command line
 cspice_kclear;
 
 

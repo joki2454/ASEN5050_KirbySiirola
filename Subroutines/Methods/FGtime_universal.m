@@ -1,8 +1,11 @@
 %%  Author: Joshua Kirby
 %  Created: 11/12/2018
-% Modified: 11/12/2018
+% Modified: 11/15/2018
 %
-% Purpose:  Generated using Algorithm 8 in Vallado.
+% Purpose:  Generated using Algorithm 8 in Vallado.  This function uses the
+% universal variable formulation of f and g functions to find the final position
+% and velocity of an object in a two-body problem given an initial position
+% and velocity and a time of flight.
 %
 % Inputs (shown in SI, but any consistent unit set will produce the same units):
 %   R0   - 3D initial position vector, km

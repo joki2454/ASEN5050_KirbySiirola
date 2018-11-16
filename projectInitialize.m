@@ -5,11 +5,10 @@
 % Purpose: Return execution settings for the ASEN 5050 Project.  Should be
 % passed into and out of every major function in init.m.  Configurables and
 % user settings should be defined here.
-%
-% Inputs:
 % 
 % Outputs: 
-%   SET - struct of project settings
+%   SET - struct of settings, initial conditions, and options
+%
 function SET = projectInitialize()
 %% Initialization
 SET = struct;
@@ -62,11 +61,11 @@ SET.CASS.TOF_JSOI2_SSOI = cspice_str2et('30 Mar 2004 15:40:33.665') - cspice_str
 SET.TRGT.tol = 1e-6; % km, found to be best to leave this as the default 1e-6
 
 % Set all targeter display types
-SET.TRGT.displayType = 'none'; % 'none' no fsolve display, 'final' default fsolve display
+SET.TRGT.displayType = 'final'; % 'none' no fsolve display, 'final' default fsolve display
 
 %% Solution Space Parameters
 SET.RANGES.sma = [SET.CONST.RS SET.CONST.SSOI/2]; % km;
-SET.RANGES.inc = [0 150]; % deg, min/max allowable, this is not the guaranteed range
+SET.RANGES.inc = [0 180]; % deg, min/max allowable, this is not the guaranteed range
                           %                         see I_park_ranger for why...
 
 %% Presentation Parameters

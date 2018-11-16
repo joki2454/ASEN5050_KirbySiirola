@@ -83,7 +83,11 @@ switch nusign
   case 1
     nu = nu + 360;
     while nu > 360
-      nu = nu - 360;
+      if ~isinf(nu) && ~isnan(nu)
+        nu = nu - 360;
+      else
+        break
+      end
     end
   case -1
     nu = nu; % all is good

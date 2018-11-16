@@ -1,8 +1,13 @@
 %%  Author: Joshua Kirby
 %  Created: 10/28/18
-% Modified: 10/30/18
+% Modified: 11/15/18
 %
-% Purpose: 
+% Purpose: This function determines the initial DeltaV and final DeltaV
+% required to follow a Lambert's arc transfer in a two-body problem from 
+% an initial position and velocity to a final position and velocity given
+% some time of flight.  A selection can be made between using a transfer
+% with transfer angle less than 180 deg or greater than 180 deg.  Default
+% is less than 180 deg.
 %
 % NOTES: -Transfer assumes transfer angle is less than 360 deg.
 %        -All vectors must be given in consistent inertial coordinates. 
