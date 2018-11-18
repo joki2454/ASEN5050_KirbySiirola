@@ -30,15 +30,16 @@ alpha = -v0^2/mu+2/r0;
 a = 1/alpha; % km
 
 %% Determine inital guess for chi
-if alpha > eps % elliptical or circular
+tol = 1e-6;
+if alpha > tol % elliptical or circular
   chi = sqrt(mu)*TOF*alpha;
-elseif abs(alpha) < eps % parabolic
+elseif abs(alpha) < tol % parabolic
   H = cross(R0,V0); % km^2/s
   p = norm(H)^2/mu; % km
   s = 1/2*acot(3*sqrt(mu/p^3)*TOF); % rad
   w = atan(tan(s)^(1/3)); % rad
   chi = sqrt(p)*2*cot(2*w);
-elseif alpha < -eps % hyperbolic
+elseif alpha < -tol % hyperbolic
   chi = sign(TOF)*sqrt(-a)*log(-2*mu*alpha*TOF/(dot(R0,V0)+sign(TOF)*sqrt(-mu*a)*(1-r0*alpha)));
 else
   error('Invalid value for alpha')

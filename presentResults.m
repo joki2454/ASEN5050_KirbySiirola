@@ -1,6 +1,6 @@
 %%  Author: Joshua Kirby
 %  Created: 11/11/2018
-% Modified: 11/15/2018
+% Modified: 11/17/2018
 %
 % Purpose:  This function presents various results for the project in the
 % form of plots.
@@ -13,8 +13,11 @@
 %             desired sma and inc (each corresponding to the first and second
 %             dimension of the matrix, respectively), km/s
 %   SET     - struct of settings, initial conditions, and options
-%   
+%
 function [] = presentResults(nominal,DVpJ,SET)
+%% Allocation
+Jcolor = [255,165,0]./256;
+
 %% Calculate sma and inc vectors and produce meshgrid
 sma = linspace(SET.RANGES.sma(1),SET.RANGES.sma(2),SET.PRESENT.numSteps); % sma
 inc = linspace(SET.RANGES.inc(1),SET.RANGES.inc(2),SET.PRESENT.numSteps); % deg
@@ -49,6 +52,19 @@ for i = 1:length(sma)
     Dv_tot(i,j) = norm(squeeze(DVpJ(i,j,:))) + norm(PS(i,j).DV); % km/s
   end
 end
+
+%% Calculate trajectories for varied parking orbit conditions
+sma_ind = round(linspace(1,length(inc),2));
+inc_ind = round(linspace(1,length(inc),5));
+for i = 1:length(sma_ind)
+  for j = 1:length(inc_ind)
+    [~,R_hc(i,j).data,R_jc(i,j).data,R_sc(i,j).data,P_EPHEM(i,j)] = transferStates(TOF(sma_ind(i),inc_ind(j)),...
+      T0(sma_ind(i),inc_ind(j)),JSOI1(sma_ind(i),inc_ind(j)),PJ(sma_ind(i),inc_ind(j)),...
+      JSOI2(sma_ind(i),inc_ind(j)),SSOI(sma_ind(i),inc_ind(j)),...
+      PS(sma_ind(i),inc_ind(j)),KE_PARK(sma_ind(i),inc_ind(j)),SET);
+  end
+end
+
 
 %% |DeltaV| at perijove
 figure('name','Dv_pJ')
@@ -131,7 +147,7 @@ grid minor
 surf(SMA,INC,res)
 xlabel('SMA (km)')
 ylabel('INC (deg)')
-zlabel('(\deltaSMA^2+\deltaINC^2)^(1/2) []')
+zlabel('(\deltaSMA^2+\deltaINC^2)^{1/2}')
 title('Sum of Squared SMA/INC Residuals vs. SMA and INC')
 hold off
 
@@ -150,32 +166,189 @@ zlabel('RAAN (deg)')
 title('RAAN vs. SMA and INC')
 hold off
 
-%% Nominal (DVpJ = 0) heliocentric trajectory
-[~,R_hc,P_EPHEM] = transferStates(nominal.TOF,nominal.T0,nominal.JSOI1,...
-  nominal.PJ,nominal.JSOI2,nominal.SSOI,nominal.PS,SET);
-figure('name','3D','units','normalized','position',[0.25 0.125,0.5 0.75])
+%% DVpJ Solution Space
+% Make color data for DVpJ
+for i = 1:length(sma)
+  for j = 1:length(inc)
+    CDataInc(i,j) = inc(j);
+    CDataSma(i,j) = sma(i);
+  end
+end
+
+figure
+subplot(1,2,1)
 hold on
 grid on
 grid minor
-% plot jupiter (not to scale)
-plot3(P_EPHEM.RJ_pJ(1),P_EPHEM.RJ_pJ(2),P_EPHEM.RJ_pJ(3),'.','color',[255,165,0]./256,'markersize',10)
-% plot saturn (not to scale)
-plot3(P_EPHEM.RS_pS(1),P_EPHEM.RS_pS(2),P_EPHEM.RS_pS(3),'m.','markersize',10)
-% plot sun (not to scale)
-plot3(0,0,0,'y.','markersize',20)
-% plot trajectory
+h = surf(DVpJ(:,:,1),DVpJ(:,:,2),DVpJ(:,:,3),CDataSma);
+h.EdgeAlpha = 0.3;
+xlabel('Vx (km/s)')
+ylabel('Vy (km/s)')
+zlabel('Vz (km/s)')
+axis equal
+title('$\Delta\vec{V}_{perijove}$ for Various Final SMAs','interpreter','latex')
+c = colorbar('location','southoutside');
+set(get(c,'Label'),'String','Final SMA (deg)');
+hold off
+
+subplot(1,2,2)
+hold on
+grid on
+grid minor
+h = surf(DVpJ(:,:,1),DVpJ(:,:,2),DVpJ(:,:,3),CDataInc);
+h.EdgeAlpha = 0.3;
+xlabel('Vx (km/s)')
+ylabel('Vy (km/s)')
+zlabel('Vz (km/s)')
+axis equal
+title('$\Delta\vec{V}_{perijove}$ for Various Final INCs','interpreter','latex')
+c = colorbar('location','southoutside');
+set(get(c,'Label'),'String','Final INC (deg)');
+hold off
+
+
+%% Nominal (DVpJ = 0) heliocentric trajectory
+[~,nominal.R_hc,nominal.R_jc,nominal.R_sc,nominal.P_EPHEM] = transferStates(nominal.TOF,nominal.T0,nominal.JSOI1,...
+  nominal.PJ,nominal.JSOI2,nominal.SSOI,nominal.PS,nominal.KE_PARK,SET);
+figure('name','3D Heliocentric','units','normalized','position',[0.125 0.125,0.75 0.75])
+hold on
+grid on
 c = get(gca,'colororder');
-plot3(R_hc(1,:),R_hc(2,:),R_hc(3,:),'color',c(1,:))
-set(gca,'color',[0 0 0],'gridcolor',[0.9 0.9 0.9],'minorgridcolor',[0.9 0.9 0.9],'gridalpha',0.6,'minorgridalpha',0.6)
+% plot trajectory
+plot3(nominal.R_hc(1,:),nominal.R_hc(2,:),nominal.R_hc(3,:),'color',c(1,:))
+% plot jupiter (not to scale) and jupiter trajectory
+plotBody3D(nominal.P_EPHEM.RJ_pJ,150*SET.CONST.RJ,Jcolor);
+plot3(nominal.P_EPHEM.RJ_hc(1,:),nominal.P_EPHEM.RJ_hc(2,:),nominal.P_EPHEM.RJ_hc(3,:),'color',c(2,:))
+% plot saturn (not to scale) and saturn trajectory
+plotBody3D(nominal.P_EPHEM.RS_pS,150*SET.CONST.RS,[1 1 1]);
+plot3(nominal.P_EPHEM.RS_hc(1,:),nominal.P_EPHEM.RS_hc(2,:),nominal.P_EPHEM.RS_hc(3,:),'color',c(3,:))
+% plot sun (not to scale)
+plotBody3D([0 0 0]',50*SET.CONST.RSun,[1 1 0]);
+set(gca,'color',[0 0 0],'gridcolor',[0.9 0.9 0.9],'minorgridcolor',[0.9 0.9 0.9],'gridalpha',0.4,'minorgridalpha',0.4)
 axis equal
 xlabel('x (km)')
 ylabel('y (km)')
 zlabel('z (km)')
-title('Spacecraft Trajectory (|\DeltaV_{perijove}|=0 km/s) in J2000')
-legend('Jupiter','Saturn','Sun','Cassini','location','east')
-h = gca;
-h.Legend.Color = [1 1 1];
+title('Spacecraft (|\DeltaV_{perijove}|=0 km/s) in Heliocentric J2000')
+h = legend('Cassini Trajectory','Jupiter (150x Scale)',...
+  'Jupiter Trajectory','Saturn (150x Scale)','Saturn Trajectory',...
+  'Sun (50x Scale)','location','westoutside');
+h.Color = [0.8 0.8 0.8];
 hold off
+
+%% Nominal jupiter-centric and saturn-centric trajectories
+figure('name','Nominal Planet-Centric','units','normalized','position',[0.125 0.125 0.75 0.75])
+subplot(1,2,1)
+hold on
+grid on
+plot3(nominal.R_jc(1,:),nominal.R_jc(2,:),nominal.R_jc(3,:),'color',c(1,:))
+plotBody3D([0 0 0]',10*SET.CONST.RJ,Jcolor);
+[x,y,z] = sphere;
+h = surf(SET.CONST.JSOI*x,SET.CONST.JSOI*y,SET.CONST.JSOI*z,ones(size(x,1),size(x,2),3));
+h.FaceAlpha = 0.1;
+h.EdgeAlpha = 0.3;
+axis equal
+xlabel('x (km)')
+ylabel('y (km)')
+zlabel('z (km)')
+set(gca,'color',[0 0 0],'gridcolor',[0.9 0.9 0.9],'minorgridcolor',[0.9 0.9 0.9],'gridalpha',0.4,'minorgridalpha',0.4)
+title({'Jupiter Flyby in Jupiter-Centric J2000','Nominal (|\DeltaV_{perijove}|=0 km/s) Case'})
+h = legend('Cassini Trajectory','Jupiter (10x Scale)','Jupiter SOI','location','southoutside');
+h.Color = [0.8 0.8 0.8];
+hold off
+
+subplot(1,2,2)
+hold on
+grid on
+plot3(nominal.R_sc(1,:),nominal.R_sc(2,:),nominal.R_sc(3,:),'color',c(1,:))
+plotBody3D([0 0 0]',10*SET.CONST.RS,[1 1 1]);
+[x,y,z] = sphere;
+h = surf(SET.CONST.SSOI*x,SET.CONST.SSOI*y,SET.CONST.SSOI*z,ones(size(x,1),size(x,2),3));
+h.FaceAlpha = 0.1;
+h.EdgeAlpha = 0.3;
+axis equal
+xlabel('x (km)')
+ylabel('y (km)')
+zlabel('z (km)')
+set(gca,'color',[0 0 0],'gridcolor',[0.9 0.9 0.9],'minorgridcolor',[0.9 0.9 0.9],'gridalpha',0.4,'minorgridalpha',0.4)
+title({'Saturn Flyby in Saturn-Centric J2000','Nominal (|\DeltaV_{perijove}|=0 km/s) Case'})
+h = legend('Cassini Trajectory','Saturn (10x Scale)','Saturn SOI','location','southoutside');
+h.Color = [0.8 0.8 0.8];
+hold off
+
+%% Jupiter centric trajectories
+figure('name','3D Jupiter-Centric','units','normalized','position',[0.125 0.125 0.75 0.75])
+% plot Cassini trajectories
+%plot3(nominal.R_sc(1,:),nominal.R_sc(2,:),nominal.R_sc(3,:),'color',c(1,:))
+for i = 1:length(sma_ind)
+  subplot(1,length(sma_ind),i)
+  hold on
+  grid on
+  lc = 1; % legend counter
+  for j = 1:length(inc_ind)
+    p(lc) = plot3(R_jc(i,j).data(1,:),R_jc(i,j).data(2,:),R_jc(i,j).data(3,:));
+    legend_str{lc} = ['Final INC = ',num2str(round(inc(inc_ind(j)),2)),' deg'];
+    lc = lc + 1;
+  end
+  axis equal
+  xlabel('x (km)')
+  ylabel('y (km)')
+  zlabel('z (km)')
+  % plot jupiter (10*scale)
+  p(lc) = plotBody3D([0 0 0]',10*SET.CONST.RJ,Jcolor);
+  legend_str{lc} = 'Jupiter (10x Scale)';
+  h = legend(p,legend_str,'location','southoutside');
+  h.Color = [0.8 0.8 0.8];
+  set(gca,'color',[0 0 0],'gridcolor',[0.9 0.9 0.9],'minorgridcolor',[0.9 0.9 0.9],'gridalpha',0.4,'minorgridalpha',0.4)
+  title({'Jupiter Flyby in Jupiter-Centric J2000',['(Final SMA = ',num2str(round(sma(sma_ind(i)),2)),' km) ']})
+  hold off
+end
+
+
+
+
+%% Saturn centric trajectories
+clear p h legend_str
+figure('name','3D Saturn-Centric','units','normalized','position',[0.125 0.125 0.75 0.75])
+% plot Cassini trajectories
+%plot3(nominal.R_sc(1,:),nominal.R_sc(2,:),nominal.R_sc(3,:),'color',c(1,:))
+for i = 1:length(sma_ind)
+  subplot(1,length(sma_ind),i)
+  hold on
+  grid on
+  lc = 1; % legend counter
+  for j = 1:length(inc_ind)
+    p(lc) = plot3(R_sc(i,j).data(1,:),R_sc(i,j).data(2,:),R_sc(i,j).data(3,:));
+    legend_str{lc} = ['Final INC = ',num2str(round(inc(inc_ind(j)),2)),' deg'];
+    lc = lc + 1;
+  end
+  axis equal
+  xlabel('x (km)')
+  ylabel('y (km)')
+  zlabel('z (km)')
+  if i == 1
+    % plot saturn (1*scale)
+    p(lc) = plotBody3D([0 0 0]',1*SET.CONST.RS,[1 1 1]);
+    legend_str{lc} = 'Saturn (1x Scale)';
+    lims = [-1 1].*5*SET.RANGES.sma(1);
+    h = legend(p,legend_str,'location','southoutside');
+    h.Color = [0.8 0.8 0.8];
+  else
+    % plot saturn (10*scale)
+    p(lc) = plotBody3D([0 0 0]',10*SET.CONST.RS,[1 1 1]);
+    legend_str{lc} = 'Saturn (10x Scale)';
+    lims = [-1 1].*2*SET.RANGES.sma(2);
+    h = legend(p,legend_str,'location','southoutside');
+    h.Color = [0.8 0.8 0.8];
+  end
+  xlim(lims)
+  ylim(lims)
+  zlim(lims)
+  set(gca,'color',[0 0 0],'gridcolor',[0.9 0.9 0.9],'minorgridcolor',[0.9 0.9 0.9],'gridalpha',0.4,'minorgridalpha',0.4)
+  title({'Saturn Arrival in Saturn-Centric J2000',['(Final SMA = ',num2str(round(sma(sma_ind(i)),2)),' km) ']})
+  hold off
+end
+
 
 
 

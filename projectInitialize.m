@@ -1,6 +1,5 @@
 %% Authors: Joshua Kirby and Amanda Siirola
 %  Created: 10/26/2018
-% Modified: 11/16/2018
 %
 % Purpose: Return execution settings for the ASEN 5050 Project.  Should be
 % passed into and out of every major function in init.m.  Configurables and
@@ -74,7 +73,7 @@ SET.RANGES.inc = [0 180]; % deg, min/max allowable, this is not the guaranteed r
 SET.PRESENT.numSteps = 30;
 
 % number of time steps for plotting 3D trajectories
-SET.PRESENT.timeSteps = 1000;
+SET.PRESENT.timeSteps = 10000;
 
 
 
