@@ -70,7 +70,7 @@ SET.RANGES.inc = [0 180]; % deg, min/max allowable, this is not the guaranteed r
 
 %% Presentation Parameters
 % number of steps over ranges for sma and inc
-SET.PRESENT.numSteps = 30;
+SET.PRESENT.numSteps = 100;
 
 % number of time steps for plotting 3D trajectories
 SET.PRESENT.timeSteps = 10000;

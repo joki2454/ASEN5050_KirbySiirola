@@ -34,6 +34,7 @@ DVpJ = zeros(length(sma),length(inc),3);
 
 %% Solve for DVpJs over range of sma and inc
 for i = 1:length(sma)
+  i
   for j = 1:length(inc)
     % Formulate fsolve equation
     AI_targeter_eqn = @(DVpJ) AI_park_targeter(DVpJ,[sma(i) inc(j)]',SET);

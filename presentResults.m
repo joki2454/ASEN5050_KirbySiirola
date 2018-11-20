@@ -26,6 +26,7 @@ SMA = SMA';
 INC = INC';
 
 %% Calculate transfer parameters over entire range
+cm = 1; % mesh counter
 for i = 1:size(DVpJ,1)
   for j = 1:size(DVpJ,2)
     [KE_PARK(i,j),TOF(i,j),T0(i,j),JSOI1(i,j),PJ(i,j),JSOI2(i,j),SSOI(i,j),PS(i,j),optim_badness] = ...
@@ -71,7 +72,7 @@ figure('name','Dv_pJ')
 hold on
 grid on
 grid minor
-surf(SMA,INC,Dv_pJ)
+surf(SMA,INC,Dv_pJ,'edgealpha',0.2)
 plot3(nominal.KE_PARK.a,nominal.KE_PARK.i,norm(nominal.DVpJ),'r.','markersize',15)
 xlabel('SMA (km)')
 ylabel('INC (deg)')
@@ -86,7 +87,7 @@ subplot(1,2,1)
 hold on
 grid on
 grid minor
-surf(SMA,INC,Dv_pS)
+surf(SMA,INC,Dv_pS,'edgealpha',0.2)
 plot3(nominal.KE_PARK.a,nominal.KE_PARK.i,norm(nominal.PS.DV),'r.','markersize',15)
 xlabel('SMA (km)')
 ylabel('INC (deg)')
@@ -99,7 +100,7 @@ subplot(1,2,2)
 hold on
 grid on
 grid minor
-surf(SMA,INC,Dv_pS)
+surf(SMA,INC,Dv_pS,'edgealpha',0.2)
 xlabel('SMA (km)')
 ylabel('INC (deg)')
 zlabel('|\DeltaV|_{pS} (km/s)')
@@ -116,7 +117,7 @@ subplot(1,2,1)
 hold on
 grid on
 grid minor
-surf(SMA,INC,Dv_tot)
+surf(SMA,INC,Dv_tot,'edgealpha',0.2)
 plot3(nominal.KE_PARK.a,nominal.KE_PARK.i,norm(nominal.PS.DV),'r.','markersize',15)
 xlabel('SMA (km)')
 ylabel('INC (deg)')
@@ -129,7 +130,7 @@ subplot(1,2,2)
 hold on
 grid on
 grid minor
-surf(SMA,INC,Dv_tot)
+surf(SMA,INC,Dv_tot,'edgealpha',0.2)
 plot3(nominal.KE_PARK.a,nominal.KE_PARK.i,norm(nominal.PS.DV),'r.','markersize',15)
 xlabel('SMA (km)')
 ylabel('INC (deg)')
@@ -144,7 +145,7 @@ figure('name','residuals')
 hold on
 grid on
 grid minor
-surf(SMA,INC,res)
+surf(SMA,INC,res,'edgealpha',0.2)
 xlabel('SMA (km)')
 ylabel('INC (deg)')
 zlabel('(\deltaSMA^2+\deltaINC^2)^{1/2}')
@@ -159,7 +160,7 @@ grid minor
 for i = 1:size(KE_PARK,2)
   raan(:,i) = extractfield(KE_PARK(:,i),'raan');
 end
-surf(SMA,INC,raan)
+surf(SMA,INC,raan,'edgealpha',0.2)
 xlabel('SMA (km)')
 ylabel('INC (deg)')
 zlabel('RAAN (deg)')
@@ -175,12 +176,12 @@ for i = 1:length(sma)
   end
 end
 
-figure
+figure('name','DVpJ Soln Space','units','normalized','position',[0.125 0.125 0.75 0.75])
 subplot(1,2,1)
 hold on
 grid on
 grid minor
-h = surf(DVpJ(:,:,1),DVpJ(:,:,2),DVpJ(:,:,3),CDataSma);
+h = surf(DVpJ(:,:,1),DVpJ(:,:,2),DVpJ(:,:,3),CDataSma,'edgealpha',0.2);
 h.EdgeAlpha = 0.3;
 xlabel('Vx (km/s)')
 ylabel('Vy (km/s)')
@@ -195,7 +196,7 @@ subplot(1,2,2)
 hold on
 grid on
 grid minor
-h = surf(DVpJ(:,:,1),DVpJ(:,:,2),DVpJ(:,:,3),CDataInc);
+h = surf(DVpJ(:,:,1),DVpJ(:,:,2),DVpJ(:,:,3),CDataInc,'edgealpha',0.2);
 h.EdgeAlpha = 0.3;
 xlabel('Vx (km/s)')
 ylabel('Vy (km/s)')
